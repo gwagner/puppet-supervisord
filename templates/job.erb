@@ -1,0 +1,14 @@
+[program:<%= name %>]
+command=<%= command %>
+process_name=%(program_name)s_%(process_num)02d
+numprocs=<%= procs %>
+autostart=true
+autorestart=true
+startsecs=1
+stdout_logfile=<%= log_file %>
+stdout_logfile_maxbytes=1MB
+stdout_logfile_backups=10
+stdout_capture_maxbytes=1MB
+stdout_events_enabled=false
+stderr_logfile=<%= error_log_file %>
+stderr_logfile_maxbytes=1MB
