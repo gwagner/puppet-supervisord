@@ -12,7 +12,6 @@ define supervisord::job(
             group => "root",
             path => "/etc/supervisord.d/${title}_job.conf",
             ensure => $ensure,
-            content => template('supervisord/job.erb'),
-            notify => Service['supervisord'];
+            content => template('supervisord/job.erb');
     }
 }
