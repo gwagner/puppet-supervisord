@@ -1,43 +1,57 @@
 #!/bin/bash
 #
-#       /etc/rc.d/init.d/supervisord
-# supervisord   This shell script takes care of starting and stopping
-#               supervisord.  Tested on Fedora 11.
+# Startup script for the Supervisor server
 #
-# Author: Brian Bouterse bmbouter@gmail.com
+# Tested with Red Hat Enterprise Linux Server release 5.5
 #
-# chkconfig: 345 80 80
-# description: supervisord is a client/server process control system. \
+# chkconfig: 2345 85 15
+# description: Supervisor is a client/server system that allows its users to \
+#              monitor and control a number of processes on UNIX-like \
+#              operating systems.
+#
 # processname: supervisord
 # pidfile: /var/run/supervisord.pid
 
 # Source function library.
-. /etc/init.d/functions
+. /etc/rc.d/init.d/functions
 
-DAEMON=/usr/bin/supervisord -u root
-PIDFILE=/var/run/supervisord.pid
+RETVAL=0
+prog="supervisord"
+SUPERVISORD=/usr/bin/supervisord
+PID_FILE=/var/run/supervisord.pid
 
-# Exit if the package is not installed
-[ -x "$DAEMON" ] || exit 0
-
-start() {
-        echo -n "Starting supervisord: "
-        if [ -f $PIDFILE ]; then
-                PID=`cat $PIDFILE`
-                echo supervisord already running: $PID
-                exit 2;
-        else
-                daemon  $DAEMON -u root -c /etc/supervisord.conf --pidfile=$PIDFILE
-                RETVAL=$?
-                echo
-                [ $RETVAL -eq 0 ] && touch /var/lock/subsys/supervisord
-                return $RETVAL
-        fi
-
+start()
+{
+        echo -n $"Starting $prog: "
+        $SUPERVISORD --pidfile $PID_FILE  -u root -c /etc/supervisord.conf && success || failure
+        RETVAL=$?
+        echo
+        return $RETVAL
 }
 
-stop() {
-        echo -n "Shutting down supervisord: "
+stop()
+{
+        echo -n $"Stopping $prog: "
+        killproc -p $PID_FILE -d 10 $SUPERVISORD
+        RETVAL=$?
+        echo
+}
+
+reload()
+{
+        echo -n $"Reloading $prog: "
+        if [ -n "`pidfileofproc $SUPERVISORD`" ] ; then
+            killproc $SUPERVISORD -HUP
+        else
+            # Fails if the pid file does not exist BEFORE the reload
+            failure $"Reloading $prog"
+        fi
+        sleep 1
+        if [ ! -e $PID_FILE ] ; then
+            # Fails if the pid file does not exist AFTER the reload
+            failure $"Reloading $prog"
+        fi
+        RETVAL=$?
         echo
         killproc -p $PIDFILE supervisord
         echo
@@ -46,22 +60,25 @@ stop() {
 }
 
 case "$1" in
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    status)
-        status supervisord
-        ;;
-    restart)
-        stop
-        start
-        ;;
-    *)
-        echo "Usage:  {start|stop|status|restart}"
-        exit 1
-        ;;
+        start)
+                start
+                ;;
+        stop)
+                stop
+                ;;
+        restart)
+                stop
+                start
+                ;;
+        reload)
+                reload
+                ;;
+        status)
+                status -p $PID_FILE $SUPERVISORD
+                RETVAL=$?
+                ;;
+        *)
+                echo $"Usage: $0 {start|stop|restart|reload|status}"
+                RETVAL=1
 esac
-exit $?
+exit $RETVAL
