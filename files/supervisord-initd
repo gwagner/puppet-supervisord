@@ -14,7 +14,7 @@
 # Source function library.
 . /etc/init.d/functions
 
-DAEMON=/usr/bin/supervisord -u root
+DAEMON=`/usr/bin/supervisord -u root -c /etc/supervisord.conf`
 PIDFILE=/var/run/supervisord.pid
 
 # Exit if the package is not installed
